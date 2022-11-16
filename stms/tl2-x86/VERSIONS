@@ -1,0 +1,37 @@
+0.9.6 (8 Sept 2008)
+    * Disabling local write barriers (STM_LOCAL_WRITE_*) in stm.h
+
+0.9.5 (20 May 2008)
+    * Support for OpenTM (opentm.stanford.edu)
+    * Option to disable contention management (-DTL2_NOCM)
+    * Fixed memory leak in TxFreeThread
+
+0.9.4 (18 Mar 2008)
+    * Option to build eager pessimistic version
+    * Bug fixes:
+      - Correctly do post-validation for TxLoad (Takayuki Usui)
+
+0.9.3 (1 Dec 2007)
+    * Restoring randomized backoff after abort
+    * malloc/free redefinitions moved from STAMP/lib/tm.h to stm.h
+
+0.9.2 (2 Oct 2007)
+    * Fix compilation (mainly for g++)
+    * Re-enable hashlog option
+
+0.9.1 (1 Oct 2007)
+    * 32/64 bit support
+    * Reorganized code
+      - Let compiler judge when to inline
+    * Support for malloc/free within transactions
+    * Remove hashlog option
+    * Added some simple stats
+    * Preliminary support for SPARC
+    * Bug fixes:
+      - Fix restoration of locally modified values (Mojtaba Mehrara)
+      - Fix TrackLoad
+      - Fix memory leaks
+      - Fixes for TryFastUpdate and TxSterilize (Joao Lourenco & Goncalo Cunha)
+
+0.9.0 (20 Apr 2007)
+    * Initial release

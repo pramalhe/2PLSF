@@ -1,0 +1,261 @@
+
+Release notes: TL2 Early-Access Release -- 2006.8.8
+~~~~~~~~~~~~~
+
+*   Dave Dice, Nir Shavit, Ori Shalev
+    Contact Dave Dice (dave.dice@sun.com) regarding any questions.  
+    Copyright Sun Microsystems Inc., 2006.  All Rights Reserved.
+
+*   This is derived from an early-access release provided by Sun Microsystems. 
+    Contact Dave Dice (dave.dice@sun.com) for the official release.
+
+*   As delivered, the package contains the sources for a 64-bit 
+    Solaris SPARC V9 -specific shared Red-Black tree based on TL2.  
+    We used the SUNPRO SS11 C compiler to build the binary.
+
+*   The code within is slight evolved from the code used to take
+    data for our DISC'06 paper.
+
+*   Abbreviated source roadmap:
+    src/Harness.c   -- test harness to exercise the red-black tree 
+    src/Makefile    -- makefile
+    src/TL-rb.c     -- contains TL2 infrastructure and red-black tree code
+    src/TL-rb.h     --
+    src/cas64.il    -- SPARC V9 SUNPRO inline templates
+
+*   Transactional primitives - API
+    TxStart()       -- Start a transaction
+    TxLD()          -- Transactional load
+    TxST()          -- Transactional store
+    TxCommit()      -- Attempt to commit the current transaction
+    TxOnce()        -- one-shot global initialization
+    TxNewThread()   -- enroll a new thread for transactional operation
+
+    TL2 does not currently provide for any form of transaction nesting, although
+    simple "flattening" would be easy to implement. 
+
+*   It should be trivial to switch to another compiler, such as gcc.
+    In fact I'd recommend gcc 4.1 over the SUNPRO compilers for TL2.
+    (If you elect to use gcc, start by transliterating the primitives 
+    in SUNPRO-specific .il file to __asm__ __volatile__ operations).  
+    Relatedly, it should be relatively easy to port to AMD64 or other 
+    operating systems such as linux.  
+
+*   The implementation currently uses an LP64 environment.  LP64 is
+    convenient as the "versioned lock word" type, vwLock, can be 
+    64-bit bits in length, avoiding -- at least as a practical concern --
+    the thorny issue of version number roll-over, while being accessed 
+    efficiently and atomically with 64-bit loads, stores and CAS (compare-and-swap).  
+
+    Alternately, it's possible to use an ILP32 environment and a 64-bit
+    vwLock.  All shared instances of the vwLock must be properly aligned
+    and accessed atomically.  (e.g., lock:cmpxchg8b and XMM loads and stores 
+    on IA32 or CASX,LDX and STX on SPARC V8+).  
+
+    Finally, it may be possible to use an ILP32 environment with a "natural"
+    32-bit vwLock.  Version number roll-over is a practial concern with 
+    a 32-bit vwLock.  In a managed environment we might be able to tolerate
+    roll-over by using a mechanism similar to that described in section 3.1.3 of:
+
+      Optimizing Memory Transactions  
+      Tim Harris, Mark Plesko, Avraham Shinnar, David Tarditi. 
+      June 2006 PLDI'06 (ACM SIGPLAN)
+      http://research.microsoft.com/~tharris/papers/2006-pldi.pdf
+
+    Harris uses the stop-the-world garbage collection facility of his managed
+    runtime environment to periodically halt all threads and force validation.
+    Alternately, he could simply abort all transactions running at the time
+    of the periodic collection.  
+
+    Note that in TL and the managed STM described by Harris et. al., validation
+    simply checks version numbers for equality in order to detect modification
+    and possible interference.  In TL2, however, version numbers are compared 
+    in magnitude, so a somewhat different approach to roll-over than the one 
+    described by Harris et. al. will be required.  
+
+*   We currently use a degenerate Bloom filter on the write-set to
+    accelerate lookaside in TxLD().  A better approach is likely to be 
+    the thread-private hash table mentioned in Harris et. al's "Optimizing
+    Memory Transactions".  
+
+*   On SPARC we use a special non-faulting in the implementation of the
+    TL2 transactional load operator (TxLD).  Non-faulting loads can easily
+    be emulated with signal handlers on non-SPARC architectures.
+
+*   We implement read-sets and write-sets (or more precisely, speculative
+    write-buffers) as thread-local linked lists of AVNodes.  A flat array
+    of AVNodes would likely be an improvement. 
+
+*   If a thread overflows its read-set it will currently abort, resize the
+    read-set, and then retry the operation.  Automatic write-set expansion is
+    not yet implemented, but would be done in a manner similar to that of 
+    the current read-set expansion.
+
+*   You'll want to run with libumem.so on Solaris.  (setenv LD_PRELOAD libumem.so).
+    The Red-Black tree code uses malloc/free and the libumem implementation
+    is highly scalable, much more so than the default malloc package.
+
+*   The implementation currently provides only transactional load and store
+    operators of "intptr_t" size.  It's trivial, of course, to implement
+    sub-word operations (e.g., byte) in terms of full-word operations.
+
+*   The TL2 code was originally derived from a TL implementation.  TL, unlike
+    TL2, admits "zombie" transactions.  (A zombie transaction is still running
+    but has read inconsistent data and is fated to die.  Containing the effects
+    of such doomed zombies is a challenge outside managed runtime environments).  
+    Given its heritage and that we wanted to share red-black tree code between TL
+    and TL2, the red-black tree code still contains calls to TxValid().  
+
+    For a pure TL2 implementation we could remove the calls to TxValid()
+    in the red-black tree code.  To "escape" an aborting transaction we'd
+    call setjmp() in TxStart() and longjmp() in TxAbort().  At abort-time
+    the thread would simply longjmp back into TxStart() to retry the offending
+    operation.  Note that on most platforms setjmp() is relatively fast, while
+    longjmp() can be more expensive.  We'd need to be careful that longjmp()
+    overhead doesn't become excessive in environments with a high abort rate.
+
+    Relatedly, on platforms where we emulate non-faulting loads with signal
+    handlers we could simply longjmp() out of the signal handler back to
+    TxStart().  I believe that Harris/Fraser/Ennals use a similar approach
+    in LibLTX.  
+
+*   Implementing OnAbort and OnCommit callbacks would be useful for 
+    certain applications.  OnCommit would be called after the write-back
+    has been completed but before the corresponding locks have been released.
+
+*   There are a number of tunable parameters in the sources.  The more interesting
+    ones are tagged with "TUNABLE" comments.
+
+*   We currently use simple test-and-test-and-set spin locks to acquire
+    versioned write locks.  It'd be interesting to try MCS locks.  
+
+*   In a CPP environment it's easy to use templates and overloading to
+    create "transactional" variables.  In this case, instead of explicit
+    calls to TxLD() and TxST() in the source, we can use normal assignment
+    syntax and depend on overloading to bind accesses to the transactional
+    variables to TxLD() and TxST().  
+
+*   TL2-specific "Thread" instances are currently type-stable and immortal.
+    Specifically, Thread structures should never be freed.  This constraint
+    arises from the fact that when locked, a versioned lock word's LSB is
+    1 and the rest of the lock word points to the owner's thread structure.
+    (Note that this also implies that the vwLock must be large enough to
+    hold a native pointer as well as the version number).  
+
+*   In our very first TL2 implementation we incremented the global version number
+    at commit-time for each update transaction.  While correct, this incurs 
+    CAS contention (on SPARC we implement the fetch-and-add of the global version
+    number with CAS in a loop) as well as considerable cache coherency traffic.
+    Recall that all transactions must fetch the global version number variable.
+    We refer to this form of clock management as "GV1".
+
+    We later developed more refined clock management schemes called GV4, GV5
+    and GV6.  The source code contains conditional compilation directives that
+    allow the developer to switch between the various schemes at compile-time.
+    See the 
+
+    GV4, GV5 and GV6:
+
+    In TL2 transactions must initially read the shared global version 
+    number variable.  The read value is subsequently used during the transaction to 
+    validate that the read-set (the observed data values) is consistent.  All 
+    transactions that update shared variables must increment that global version 
+    number at commit-time.  The highly read-write nature of the global version number 
+    variable results in considerable SMP coherency traffic.  Relatedly, we can suffer 
+    contention in the loop that increments the global version number in the form of
+    failed compare-and-swap operations.  These effects can limit the scalability of TL2.   
+    
+    Reduced coherency traffic and compare-and-swap contention resulting in improved 
+    transactional throughput
+    
+    We describe 3 related mechanisms that address the problems described above.
+    
+    1. "GV4"
+    
+    In the original TL2 algorithm the transactional commit operation would (a)
+    acquire locks covering the transaction's write-set, (b) atomically increment the global
+    version number yielding a WV (Write Version) value, (c) validate the transaction's
+    read-set set, and, contingent upon (c), write-back the values from the write-set to 
+    their ultimate shared locations and then release and update the locks covering the 
+    write-set by storing WV into the lock-words.  The increment of the global version 
+    number was accomplished with a loop using an atomic compare-and-swap (CAS) instruction. 
+    
+    We observed, however, that we can safely replace the loop with a single 
+    CAS attempt.  Lets say we have two nearly simultaneous writers trying to atomically 
+    increment the global version number.  The CAS performed by one thread succeeds but the 
+    CAS performed by the 2nd thread fails, returning the value just installed by the 
+    1st thread.  We have determined that we can safely allow both threads to use the 
+    same WV.  The thread whose CAS fails "borrows" the newly incremented value returned 
+    by the failing CAS instruction and uses that value as its WV.  Note that we still 
+    incur CAS latency on every attempt to increment the global clock and we still 
+    generate cache-coherent read-write traffic on the clock but we have avoided CAS
+    contention and the retries inherent in the original loop.  
+    
+    Allowing 2 writers to use the same WV is safe. If the CAS used to atomically increment 
+    the global version number fails then we have 2 writers racing; one atomic increment 
+    attempt succeeded and one failed.  Because the 2 threads hold locks on their respective 
+    write-sets at the time they try to increment, we know that their write-sets do not 
+    intersect.  If the write-set of one thread intersects the read-set of the other then we 
+    know that one transaction will subsequently fail validation (either because the 
+    lock associated with the read-set entry is held by the other thread, or because the 
+    other thread already committed and released the lock covering the variable, installing 
+    the new WV).  As such we can safely allow both threads to use the same (duplicate) WV.  
+    This relaxation provides a significant performance benefit on high-order SMP systems.
+    Without loss of generality, we can extend this reasoning to more than 2 threads.  
+    
+    The critical safety invariant is that any computed WV must be > any previously 
+    read (observed) RV.  
+    
+    2. "GV5"
+    
+    Instead of attempting to increment the global version number, we simply compute
+    WV = GlobalVersionNumber + 1.  This greatly reduces coherency traffic (write-rate)
+    on the GlobalVersionNumber at the cost of an increased false-positive abort rate.  
+    In GV5 we only increment GlobalVersionNumber at abort-time.  
+    
+    
+    3. "GV6"
+
+    GV6 is an adaptive hybrid of GV4 and GV5.  We employ a random number generator to select
+    between GV4 and GV5.  Randomly, 1 out N commit operations, we use GV4, the other N-1 times
+    we use GV5.  In one variation on GV6 We vary N based on the recent successful commit rate 
+    (transactional throughput).  That is, GV6 programmatically varies N using feedback to try 
+    to maximize transactional throughput.  (Alternately, we can attempt to minimize the 
+    recent abort rate).  
+
+*   For a Java implementation:
+
+    1.  AtomicLongArray might be convenient for the "LockTab" versioned lock word stripe
+        array.
+
+    2.  In the C implementation the read-set and write-set entries contain the 
+        virtual addresses of the transactional variables.   Raw virtual addresses 
+        aren't necessarily stable in a copying garbage collected environment, however.  
+        Relatedly, in PS mode we find the associated lock word in the LockTab table by 
+        hashing the virtual address of the transactional variable.  
+            
+        To avoid these problems in Java or other managed runtime environments with
+        copying collectors, we could record the read-set and write-set elements
+        as (object reference, field offset) pairs instead of virtual addresses. 
+        Instead of a field offset we could also use a Java reflection "Field" type.
+        For hashing into the lock array we could use the object's hashCode() value,
+        which is stable.  
+
+        Alternately, we might continue to use raw linear addresses as is done in the
+        C implementation, but simply abort all transactions that are alive at the
+        time of a copy operation.  
+        
+   
+
+Dave Dice 
+
+
+
+    
+    
+
+
+
+        
+
+ 

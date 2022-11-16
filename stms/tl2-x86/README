@@ -1,0 +1,41 @@
+              _____   _       ____                    ___     __
+             |_   _| | |     |___ \          __  __  ( _ )   / /_
+               | |   | |       __) |  _____  \ \/ /  / _ \  | '_ \
+               | |   | |___   / __/  |_____|  >  <  | (_) | | (_) |
+               |_|   |_____| |_____|         /_/\_\  \___/   \___/
+
+
+                           http://stamp.stanford.edu
+
+
+Introduction
+------------
+
+TL2-x86 is a port of SUN's TL2 [1] that works on x86. For information on TL2 and
+how it works, please refer to RELEASENOTES. TL2-x86 was created by Chi Cao Minh
+(caominh@stanford.edu).
+
+
+Building STAMP with TL2-x86
+---------------------------
+
+1) In tl2-x86, build libtl2 using the command "make -f Makefile.real".
+
+2) In STAMP/common/Defines.common.mk, edit the variable "STM" to point to tl2-x86.
+
+3) Compile a STAMP benchmark using the command "make -f Makefile.stm".
+
+
+Platforms
+---------
+
+TL2-x86 has been tested on Ubuntu 6, Ubuntu 7, Fedora Core 5, Fedora Core 6,
+CentOS 4, and CentOS 5, on both 32-bit i386 and 64-bit x86_64 architectures.
+
+
+References
+----------
+
+[1] D. Dice, O. Shalev, and N. Shavit. Transactional Locking II. In the
+    Proceedings of the 20th International Symposium on Distributed Computing
+    (DISC), Stockholm, Sweeden, Sept. 2006.
