@@ -1,0 +1,573 @@
+/*
+ * B-tree set (C++)
+ *
+ * Copyright (c) 2018 Project Nayuki. (MIT License)
+ * https://www.nayuki.io/page/btree-set
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * - The above copyright notice and this permission notice shall be included in
+ *   all copies or substantial portions of the Software.
+ * - The Software is provided "as is", without warranty of any kind, express or
+ *   implied, including but not limited to the warranties of merchantability,
+ *   fitness for a particular purpose and noninfringement. In no event shall the
+ *   authors or copyright holders be liable for any claim, damages or other
+ *   liability, whether in an action of contract, tort or otherwise, arising from,
+ *   out of or in connection with the Software or the use or other dealings in the
+ *   Software.
+ */
+
+#ifndef _SEQUENTIAL_BTREE_H_
+#define _SEQUENTIAL_BTREE_H_
+
+#pragma once
+
+#include <algorithm>
+#include <cassert>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <stdexcept>
+#include <utility>
+#include <vector>
+
+
+template <typename E>
+class BTree final {
+
+	private: class Node;  // Forward declaration
+
+	/*---- Fields ----*/
+
+	public: Node* root {nullptr};
+	private: std::size_t count {0}; // TODO: remove
+
+	private: const std::uint32_t minKeys;  // At least 1, equal to degree-1
+	private: const std::uint32_t maxKeys;  // At least 3, odd number, equal to minKeys*2+1
+
+
+
+	/*---- Constructors ----*/
+
+	// The degree is the minimum number of children each non-root internal node must have.
+	public: explicit BTree(std::uint32_t degree) :
+			minKeys(degree - 1),
+			maxKeys(degree <= UINT32_MAX / 2 ? degree * 2 - 1 : 0) {  // Avoid overflow
+		if (degree < 2)
+			throw std::domain_error("Degree must be at least 2");
+		if (degree > UINT32_MAX / 2)  // In other words, need maxChildren <= UINT32_MAX
+			throw std::domain_error("Degree too large");
+		clear();
+	}
+
+    ~BTree() {
+        deleteAll(root);
+    }
+
+
+	/*---- Methods ----*/
+
+	public: bool empty() const {
+		return count == 0;
+	}
+
+
+	public: std::size_t size() const {
+		return count;
+	}
+
+	public: void deleteAll(Node* node){
+		if(node->isLeaf()){
+            delete node;
+		}else{
+            for(int i=0;i<node->length;i++){
+                deleteAll(node->children[i]);
+                //if(!node->children[i]->isLeaf()){
+                //  delete node->children[i];
+                //}
+            }
+		}
+	}
+
+
+	public: void clear() {
+		if(root!=nullptr){
+			deleteAll(root);
+		}
+		root = new Node(maxKeys, true);
+		count = 0;
+	}
+
+
+	using SearchResult = std::pair<bool,std::int32_t>;
+
+	public: bool contains(const E &val) const {
+		// Walk down the tree
+		const Node* node = root;
+		while (true) {
+			SearchResult sr = node->search(val);
+			if (sr.first)
+				return true;
+			else if (node->isLeaf())
+				return false;
+			else  // Internal node
+				node = node->children[sr.second];
+		}
+	}
+
+
+	//TODO: return bool
+	public: void insert(const E& val) {
+		// Special preprocessing to split root node
+		if (root->length == maxKeys) {
+			Node* child = root;
+			root = new Node(maxKeys, false);  // Increment tree height
+			root->children[0] = child;
+			root->splitChild(minKeys, maxKeys, 0);
+		}
+
+		// Walk down the tree
+		Node* node = root;
+		//std::cout<<root<<" root insert\n";
+		//std::cout<<val<<" Key insert\n";
+		while (true) {
+			// Search for index in current node
+			assert(node->length < maxKeys);
+			assert(node == root || node->length >= minKeys);
+
+			SearchResult sr = node->search(val);
+			if (sr.first)
+				return;  // Key already exists in tree
+			std::int32_t index = sr.second;
+
+			//std::cout<<node<<" insert\n";
+			//std::cout<<node->length<<" insert length\n";
+			//std::cout<<index<<" insert index\n";
+			if (node->isLeaf()) {  // Simple insertion into leaf
+				if (count == SIZE_MAX)
+					throw std::length_error("Maximum size reached");
+
+				for(int i=node->length;i>=index+1;i--){
+					//std::cout<<i<<" i\n";
+					//std::cout<<(node->length-1)<<" node->length-1\n";
+					//std::cout<<(index+1)<<" index+1\n";
+					node->keys[i]=node->keys[i-1];
+				}
+				node->keys[index] = val;
+				node->length = node->length+1;
+				count++;
+				return;  // Successfully inserted
+
+			} else {  // Handle internal node
+				Node* child = node->children[index];
+				if (child->length == maxKeys) {  // Split child node
+					node->splitChild(minKeys, maxKeys, index);
+					const E& middleKey = node->keys[index];
+					if (val == middleKey)
+						return;  // Key already exists in tree
+					else if (val > middleKey)
+						child = node->children[index + 1];
+				}
+				node = child;
+			}
+		}
+	}
+
+
+	public: std::size_t erase(const E& val) {
+		// Walk down the tree
+		bool found;
+		std::int32_t index;
+		{
+			SearchResult sr = root->search(val);
+			found = sr.first;
+			index = sr.second;
+		}
+		Node* node = root;
+		//std::cout<<val<<" key erase\n";
+		while (true) {
+			assert(node->length <= maxKeys);
+			assert(node == root || node->length > minKeys);
+			//std::cout<<node<<" erase\n";
+			if (node->isLeaf()) {
+				if (found) {  // Simple removal from leaf
+					node->removeKey(index);
+					assert(count > 0);
+					count--;
+					return 1;
+				} else
+					return 0;
+
+			} else {  // Internal node
+				if (found) {  // Key is stored at current node
+					Node* left  = node->children[index + 0];
+					Node* right = node->children[index + 1];
+					assert(left != nullptr && right != nullptr);
+					if (left->length > minKeys) {  // Replace key with predecessor
+						node->keys[index] = left->removeMax(minKeys);
+						assert(count > 0);
+						count--;
+						return 1;
+					} else if (right->length > minKeys) {  // Replace key with successor
+						node->keys[index] = right->removeMin(minKeys);
+						assert(count > 0);
+						count--;
+						return 1;
+					} else {  // Merge key and right node into left node, then recurse
+						node->mergeChildren(minKeys, index);
+						if (node == root && root->length==0) {
+							assert(root->length+1 == 1);
+							Node* next = root->children[0];
+							delete root;
+							root = next; //TODO:delete root
+							//root->children[0] = nullptr;
+						}
+						node = left;
+						index = minKeys;  // Index known due to merging; no need to search
+					}
+
+				} else {  // Key might be found in some child
+					Node* child = node->ensureChildRemove(minKeys, index);
+					if (node == root && root->length==0) {
+						assert(root->length +1 == 1);
+						Node* next = root->children[0];
+						delete root;
+						root = next; //TODO:delete root
+						//root->children[0] = nullptr;
+					}
+					node = child;
+					SearchResult sr = node->search(val);
+					found = sr.first;
+					index = sr.second;
+				}
+			}
+		}
+	}
+
+
+	// For unit tests
+	public: void checkStructure() const {
+		// Check size and root node properties
+		if (root == nullptr || (count > maxKeys && root->isLeaf())
+				|| (count <= minKeys * 2 && (!root->isLeaf() || root->length != count)))
+			throw std::logic_error("Invalid size or root type");
+
+		// Calculate height by descending into one branch
+		int height = 0;
+		for (const Node* node = root; !node->isLeaf(); node = node->children[0]) {
+			if (height == INT_MAX)
+				throw std::logic_error("Integer overflow");
+			height++;
+		}
+
+		// Check all nodes and total size
+		if (root->checkStructure(minKeys, maxKeys, true, height, nullptr, nullptr) != count)
+			throw std::logic_error("Size mismatch");
+	}
+
+
+	// For debugging
+	public: void printStructure(Node* node) const {
+	    if (node == nullptr) return;
+	    printf("%p keys = [ ", node);
+	    for (int i = 0; i < node->length; i++) printf("%d ", node->keys[i]);
+	    printf("]\n");
+	    if (node->isLeaf()) return;
+	    for (int i = 0; i < node->length+1; i++) printStructure(node->children[i]);
+	}
+
+
+	/*---- Helper class: B-tree node ----*/
+
+	private: class Node final {
+
+		/*-- Fields --*/
+
+		// Size is in the range [0, maxKeys] for root node, [minKeys, maxKeys] for all other nodes.
+		public: E* keys;
+		public: int length {0};
+		// If leaf then size is 0, otherwise if internal node then size always equals keys.size()+1.
+		public: Node** children;
+
+
+		/*-- Constructor --*/
+
+		// Note: Once created, a node's structure never changes between a leaf and internal node.
+		public: Node(std::uint32_t maxKeys, bool leaf) {
+			assert(maxKeys >= 3 && maxKeys % 2 == 1);
+			keys = new E[maxKeys];
+			children = new Node*[maxKeys + 1];
+			for(int i=0;i<maxKeys + 1;i++){
+				children[i]=nullptr;
+			}
+		}
+
+		~Node() {
+			delete[] keys;
+			delete[] children;
+		}
+
+
+		/*-- Methods for getting info --*/
+
+		public: bool getLength() const {
+			return length;
+		}
+
+		public: bool isLeaf() const {
+			return (children[0]==nullptr);
+		}
+
+
+		// Searches this node's keys vector and returns (true, i) if obj equals keys[i],
+		// otherwise returns (false, i) if children[i] should be explored. For simplicity,
+		// the implementation uses linear search. It's possible to replace it with binary search for speed.
+		public: SearchResult search(const E &val) const {
+			std::int32_t i = 0;
+			while (i < length) {
+				const E& elem = keys[i];
+				if (val == elem) {
+					assert(i < length);
+					return SearchResult(true, i);  // Key found
+				} else if (val > elem)
+					i++;
+				else  // val < elem
+					break;
+			}
+			assert(i <= length);
+			return SearchResult(false, i);  // Not found, caller should recurse on child
+		}
+
+
+		/*-- Methods for insertion --*/
+
+		// For the child node at the given index, this moves the right half of keys and children to a new node,
+		// and adds the middle key and new child to this node. The left half of child's data is not moved.
+		public: void splitChild(std::size_t minKeys, std::size_t maxKeys, std::size_t index) {
+			assert(!this->isLeaf() && index <= this->length && this->length < maxKeys);
+			Node* left = this->children[index];
+			Node* right = new Node(maxKeys,left->isLeaf());
+
+			// Handle keys
+			int j=0;
+			for(int i=minKeys + 1;i<left->length;i++){
+				right->keys[j] = left->keys[i];
+				j++;
+			}
+
+			//add right node to this
+			for(int i=length+1; i>=index+2;i--){
+				this->children[i]= this->children[i-1];
+			}
+			this->children[index+1] = right;
+			for(int i=length; i>=index+1;i--){
+				this->keys[i]= this->keys[i-1];
+			}
+			this->keys[index] = left->keys[minKeys];
+			this->length = this->length+1;
+
+			if(!left->isLeaf()){
+				j=0;
+				for(int i= minKeys + 1;i<left->length+1;i++){
+					right->children[j] = left->children[i];
+					j++;
+				}
+			}
+
+			right->length = left->length-minKeys-1;
+			left->length = minKeys;
+		}
+
+
+		/*-- Methods for removal --*/
+
+		// Performs modifications to ensure that this node's child at the given index has at least
+		// minKeys+1 keys in preparation for a single removal. The child may gain a key and subchild
+		// from its sibling, or it may be merged with a sibling, or nothing needs to be done.
+		// A reference to the appropriate child is returned, which is helpful if the old child no longer exists.
+		public: Node* ensureChildRemove(std::size_t minKeys, std::uint32_t index) {
+			// Preliminaries
+			assert(!this->isLeaf() && index < this->length+1);
+			Node* child = this->children[index];
+			if (child->length > minKeys)  // Already satisfies the condition
+				return child;
+			assert(child->length == minKeys);
+
+			// Get siblings
+			Node* left = index >= 1 ? this->children[index - 1] : nullptr;
+			Node* right = index < this->length ? this->children[index + 1] : nullptr;
+			bool internal = !child->isLeaf();
+			assert(left != nullptr || right != nullptr);  // At least one sibling exists because degree >= 2
+			assert(left  == nullptr || left ->isLeaf() != internal);  // Sibling must be same type (internal/leaf) as child
+			assert(right == nullptr || right->isLeaf() != internal);  // Sibling must be same type (internal/leaf) as child
+
+			if (left != nullptr && left->length > minKeys) {  // Steal rightmost item from left sibling
+				//std::cout<<"Passou left\n";
+				if (internal) {
+					for(int i=child->length+1;i>=1;i--){
+						child->children[i] = child->children[i-1];
+					}
+					child->children[0] = left->children[left->length];
+				}
+				for(int i=child->length;i>=1;i--){
+					child->keys[i] = child->keys[i-1];
+				}
+				child->keys[0] = this->keys[index - 1];
+				this->keys[index-1] = left->keys[left->length-1];
+				left->length = left->length-1;
+				child->length = child->length+1;
+				return child;
+			} else if (right != nullptr && right->length > minKeys) {  // Steal leftmost item from right sibling
+				//std::cout<<"Passou right\n";
+				if (internal) {
+					child->children[child->length+1] = right->children[0];
+					for(int i=0;i<right->length;i++){
+						right->children[i] = right->children[i+1];
+					}
+				}
+				child->keys[child->length] = this->keys[index];
+				this->keys[index] = right->removeKey(0);
+				child->length = child->length+1;
+				return child;
+			} else if (left != nullptr) {  // Merge child into left sibling
+				this->mergeChildren(minKeys, index - 1);
+				return left;  // This is the only case where the return value is different
+			} else if (right != nullptr) {  // Merge right sibling into child
+				this->mergeChildren(minKeys, index);
+				return child;
+			} else
+				throw std::logic_error("Impossible condition");
+		}
+
+
+		// Merges the child node at index+1 into the child node at index,
+		// assuming the current node is not empty and both children have minKeys.
+		public: void mergeChildren(std::size_t minKeys, std::uint32_t index) {
+			assert(!this->isLeaf() && index < this->length);
+			Node* left  = this->children[index];
+			Node* right = this->children[index+1];
+			assert(left->length == minKeys && right->length == minKeys);
+			//std::cout<<"Passou\n";
+			if (!left->isLeaf()){
+				for(int i=0;i<right->length+1;i++){
+					left->children[left->length+1+i] = right->children[i];
+				}
+			}
+			left->keys[left->length] = this->keys[index];
+			for(int i=0;i<right->length;i++){
+				left->keys[left->length+1+i] = right->keys[i];
+			}
+			left->length = left->length + right->length+1;
+			// remove key(index)
+			for(int i=index;i<length-1;i++){
+				this->keys[i]=this->keys[i+1];
+			}
+			// remove children (index+1)
+			delete children[index+1];
+			for(int i=index+1;i<length;i++){
+				this->children[i]=this->children[i+1];
+			}
+			this->children[length]=nullptr;
+			length = length-1;
+		}
+
+
+		// Removes and returns the minimum key among the whole subtree rooted at this node.
+		// Requires this node to be preprocessed to have at least minKeys+1 keys.
+		public: E removeMin(std::size_t minKeys) {
+			for (Node* node = this; ; ) {
+				assert(node->length > minKeys);
+				if (node->isLeaf()){
+					E ret = node->keys[0];
+					for(int i=0;i<node->length-1;i++){
+						node->keys[i]=node->keys[i+1];
+					}
+					node->length = node->length-1;
+					return ret;
+				}else{
+					node = node->ensureChildRemove(minKeys, 0);
+				}
+
+			}
+		}
+
+
+		// Removes and returns the maximum key among the whole subtree rooted at this node.
+		// Requires this node to be preprocessed to have at least minKeys+1 keys.
+		public: E removeMax(std::size_t minKeys) {
+			for (Node *node = this; ; ) {
+				assert(node->length > minKeys);
+				if (node->isLeaf()){
+					node->length = node->length-1;
+					return node->keys[node->length];
+				}else{
+					node = node->ensureChildRemove(minKeys, node->length);
+				}
+			}
+		}
+
+
+		// Removes and returns this node's key at the given index.
+		public: E removeKey(std::uint32_t index) {
+			E ret = this->keys[index];
+			for(int i=index;i<length-1;i++){
+				this->keys[i]=this->keys[i+1];
+			}
+			length = length-1;
+			return ret;
+		}
+
+
+		/*-- Miscellaneous methods --*/
+
+		// Checks the structure recursively and returns the total number
+		// of keys in the subtree rooted at this node. For unit tests.
+		public: std::size_t checkStructure(std::size_t minKeys, std::size_t maxKeys, bool isRoot, int leafDepth, const E *min, const E *max) const {
+			// Check basic fields
+			const std::size_t numKeys = length;
+			if (isLeaf() != (leafDepth == 0))
+				throw std::logic_error("Incorrect leaf/internal node type");
+			if (numKeys > maxKeys)
+				throw std::logic_error("Invalid number of keys");
+			if (isRoot && !isLeaf() && numKeys == 0)
+				throw std::logic_error("Invalid number of keys");
+			if (!isRoot && numKeys < minKeys)
+				throw std::logic_error("Invalid number of keys");
+
+			// Check keys for strict increasing order
+			for (std::size_t i = 0; i < numKeys; i++) {
+				const E &key = keys[i];
+				bool fail = i == 0 && min != nullptr && key <= *min;
+				fail |= i >= 1 && key <= keys[i - 1];
+				fail |= i == numKeys - 1 && max != nullptr && key >= *max;
+				if (fail)
+					throw std::logic_error("Invalid key ordering");
+			}
+
+			// Check children recursively and count keys in this subtree
+			std::size_t count = numKeys;
+			if (!isLeaf()) {
+				if (length+1 != numKeys + 1)
+					throw std::logic_error("Invalid number of children");
+				// Check children pointers and recurse
+				for (std::size_t i = 0; i < length+1; i++) {
+					std::size_t temp = children[i]->checkStructure(
+						minKeys, maxKeys, false, leafDepth - 1,
+						(i == 0 ? min : &keys[i - 1]), (i == numKeys ? max : &keys[i]));
+					if (SIZE_MAX - temp < count)
+						throw std::logic_error("Size overflow");
+					count += temp;
+				}
+			}
+			return count;
+		}
+
+	};
+
+};
+#endif   // _SEQUENTIAL_BTREE_H_
