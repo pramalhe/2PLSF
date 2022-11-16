@@ -1,0 +1,210 @@
+Configuration: num=1000  duration=20  runs=1  histo=0  threads=1,4,8,16,24,32,  ratios=100.0%,10.0%,0.0%,
+This benchmark takes about 0.0333333 hours to complete
+
+----- Partially Disjoint Benchmark -----
+
+----- Pair threads in opposite directions   threads=1   runs=1   length=20s -----
+##### 2PL-Undo-Dist-SF #####  
+Txn/sec = 879     delta = 0%   min = 879   max = 879
+Sorting delays...
+Txn delay (us): 50%=1137  70%=1148  80%=1155  90%=1163  99%=1182  99.9%=1196  99.99%=1220  99.999%=1235  max=1235
+
+----- Pair threads in opposite directions   threads=4   runs=1   length=20s -----
+##### 2PL-Undo-Dist-SF #####  
+Txn/sec = 1708     delta = 0%   min = 1708   max = 1708
+Sorting delays...
+Txn delay (us): 50%=2341  70%=2367  80%=2381  90%=2404  99%=2469  99.9%=2508  99.99%=2527  99.999%=2539  max=2539
+
+----- Pair threads in opposite directions   threads=8   runs=1   length=20s -----
+##### 2PL-Undo-Dist-SF #####  
+Txn/sec = 3444     delta = 0%   min = 3444   max = 3444
+Sorting delays...
+Txn delay (us): 50%=2327  70%=2352  80%=2362  90%=2377  99%=2451  99.9%=2495  99.99%=2537  99.999%=2622  max=2622
+
+----- Pair threads in opposite directions   threads=16   runs=1   length=20s -----
+##### 2PL-Undo-Dist-SF #####  
+Txn/sec = 6918     delta = 0%   min = 6918   max = 6918
+Sorting delays...
+Txn delay (us): 50%=2317  70%=2342  80%=2353  90%=2375  99%=2462  99.9%=2502  99.99%=2533  99.999%=2656  max=2715
+
+----- Pair threads in opposite directions   threads=24   runs=1   length=20s -----
+##### 2PL-Undo-Dist-SF #####  
+Txn/sec = 10379     delta = 0%   min = 10379   max = 10379
+Sorting delays...
+Txn delay (us): 50%=2313  70%=2344  80%=2356  90%=2375  99%=2452  99.9%=2498  99.99%=2531  99.999%=2810  max=2853
+
+----- Pair threads in opposite directions   threads=32   runs=1   length=20s -----
+##### 2PL-Undo-Dist-SF #####  
+Txn/sec = 13891     delta = 0%   min = 13891   max = 13891
+Sorting delays...
+Txn delay (us): 50%=2305  70%=2338  80%=2349  90%=2363  99%=2432  99.9%=2484  99.99%=2531  99.999%=3447  max=4415
+
+Successfuly saved results in data/part-disjoint-2plundodistsf.txt
+totalAborts=3376184  totalCommits=745160  abortRatio=453.1% 
+TL2 system ready: GV=GV4
+Configuration: num=1000  duration=20  runs=1  histo=0  threads=1,4,8,16,24,32,  ratios=100.0%,10.0%,0.0%,
+This benchmark takes about 0.0333333 hours to complete
+
+----- Partially Disjoint Benchmark -----
+
+----- Pair threads in opposite directions   threads=1   runs=1   length=20s -----
+##### TL2-Orig #####  
+Txn/sec = 885     delta = 0%   min = 885   max = 885
+Sorting delays...
+Txn delay (us): 50%=1131  70%=1139  80%=1144  90%=1150  99%=1162  99.9%=1175  99.99%=1217  99.999%=2103  max=2103
+
+----- Pair threads in opposite directions   threads=4   runs=1   length=20s -----
+##### TL2-Orig #####  
+Txn/sec = 711     delta = 0%   min = 711   max = 711
+Sorting delays...
+Txn delay (us): 50%=1146  70%=3420  80%=7891  90%=14916  99%=49919  99.9%=137821  99.99%=544959  99.999%=658126  max=658126
+
+----- Pair threads in opposite directions   threads=8   runs=1   length=20s -----
+##### TL2-Orig #####  
+Txn/sec = 1291     delta = 0%   min = 1291   max = 1291
+Sorting delays...
+Txn delay (us): 50%=2263  70%=6793  80%=9013  90%=16094  99%=41985  99.9%=83778  99.99%=150578  99.999%=201745  max=201745
+
+----- Pair threads in opposite directions   threads=16   runs=1   length=20s -----
+##### TL2-Orig #####  
+Txn/sec = 4374     delta = 0%   min = 4374   max = 4374
+Sorting delays...
+Txn delay (us): 50%=1138  70%=2256  80%=4505  90%=7989  99%=32642  99.9%=65328  99.99%=134096  99.999%=255060  max=255060
+
+----- Pair threads in opposite directions   threads=24   runs=1   length=20s -----
+##### TL2-Orig #####  
+Txn/sec = 6919     delta = 0%   min = 6919   max = 6919
+Sorting delays...
+Txn delay (us): 50%=1137  70%=2241  80%=3455  90%=7912  99%=28346  99.9%=76820  99.99%=293308  99.999%=2238979  max=2346111
+
+----- Pair threads in opposite directions   threads=32   runs=1   length=20s -----
+##### TL2-Orig #####  
+Txn/sec = 10622     delta = 0%   min = 10622   max = 10622
+Sorting delays...
+Txn delay (us): 50%=1128  70%=1149  80%=3329  90%=6719  99%=24668  99.9%=63942  99.99%=416295  99.999%=1661289  max=5603672
+
+Successfuly saved results in data/part-disjoint-tl2orig.txt
+TL2 system shutdown:
+  GCLOCK=0xF2476 Starts=1513341 Aborts=1016383
+  Overflows: R=0 W=0 L=0
+Configuration: num=1000  duration=20  runs=1  histo=0  threads=1,4,8,16,24,32,  ratios=100.0%,10.0%,0.0%,
+This benchmark takes about 0.0333333 hours to complete
+
+----- Partially Disjoint Benchmark -----
+
+----- Pair threads in opposite directions   threads=1   runs=1   length=20s -----
+##### orec_eager #####  
+Txn/sec = 889     delta = 0%   min = 889   max = 889
+Sorting delays...
+Txn delay (us): 50%=1126  70%=1133  80%=1138  90%=1145  99%=1158  99.9%=1169  99.99%=1201  99.999%=1216  max=1216
+
+----- Pair threads in opposite directions   threads=4   runs=1   length=20s -----
+##### orec_eager #####  
+Txn/sec = 83     delta = 0%   min = 83   max = 83
+Sorting delays...
+Txn delay (us): 50%=55593  70%=59208  80%=61264  90%=64227  99%=70435  99.9%=72787  99.99%=73373  99.999%=73373  max=73373
+
+----- Pair threads in opposite directions   threads=8   runs=1   length=20s -----
+##### orec_eager #####  
+Txn/sec = 213     delta = 0%   min = 213   max = 213
+Sorting delays...
+Txn delay (us): 50%=43389  70%=55768  80%=58497  90%=61964  99%=68715  99.9%=72506  99.99%=74681  99.999%=74681  max=74681
+
+----- Pair threads in opposite directions   threads=16   runs=1   length=20s -----
+##### orec_eager #####  
+Txn/sec = 539     delta = 0%   min = 539   max = 539
+Sorting delays...
+Txn delay (us): 50%=25754  70%=47706  80%=53596  90%=58406  99%=67602  99.9%=72383  99.99%=76371  99.999%=77465  max=77465
+
+----- Pair threads in opposite directions   threads=24   runs=1   length=20s -----
+##### orec_eager #####  
+Txn/sec = 938     delta = 0%   min = 938   max = 938
+Sorting delays...
+Txn delay (us): 50%=19089  70%=39147  80%=49226  90%=56809  99%=67201  99.9%=72215  99.99%=76044  99.999%=76130  max=76130
+
+----- Pair threads in opposite directions   threads=32   runs=1   length=20s -----
+##### orec_eager #####  
+Txn/sec = 1364     delta = 0%   min = 1364   max = 1364
+Sorting delays...
+Txn delay (us): 50%=15607  70%=34982  80%=46107  90%=54191  99%=65890  99.9%=71917  99.99%=76727  99.999%=78356  max=78356
+
+Successfuly saved results in data/part-disjoint-oreceager.txt
+Configuration: num=1000  duration=20  runs=1  histo=0  threads=1,4,8,16,24,32,  ratios=100.0%,10.0%,0.0%,
+This benchmark takes about 0.0333333 hours to complete
+
+----- Partially Disjoint Benchmark -----
+
+----- Pair threads in opposite directions   threads=1   runs=1   length=20s -----
+##### OneFileSTM-WF #####  
+Txn/sec = 883     delta = 0%   min = 883   max = 883
+Sorting delays...
+Txn delay (us): 50%=1131  70%=1141  80%=1148  90%=1157  99%=1178  99.9%=1193  99.99%=1203  99.999%=1232  max=1232
+
+----- Pair threads in opposite directions   threads=4   runs=1   length=20s -----
+##### OneFileSTM-WF #####  
+Txn/sec = 880     delta = 0%   min = 880   max = 880
+Sorting delays...
+Txn delay (us): 50%=4550  70%=5647  80%=5692  90%=6762  99%=7930  99.9%=8017  99.99%=9026  99.999%=9090  max=9090
+
+----- Pair threads in opposite directions   threads=8   runs=1   length=20s -----
+##### OneFileSTM-WF #####  
+Txn/sec = 883     delta = 0%   min = 883   max = 883
+Sorting delays...
+Txn delay (us): 50%=9031  70%=11261  80%=12309  90%=13479  99%=16986  99.9%=20348  99.99%=22542  99.999%=22689  max=22689
+
+----- Pair threads in opposite directions   threads=16   runs=1   length=20s -----
+##### OneFileSTM-WF #####  
+Txn/sec = 884     delta = 0%   min = 884   max = 884
+Sorting delays...
+Txn delay (us): 50%=17865  70%=19166  80%=23696  90%=26916  99%=33709  99.9%=41565  99.99%=47055  99.999%=47234  max=47234
+
+----- Pair threads in opposite directions   threads=24   runs=1   length=20s -----
+##### OneFileSTM-WF #####  
+Txn/sec = 881     delta = 0%   min = 881   max = 881
+Sorting delays...
+Txn delay (us): 50%=26914  70%=29144  80%=30373  90%=40393  99%=48194  99.9%=51522  99.99%=62746  99.999%=63163  max=63163
+
+----- Pair threads in opposite directions   threads=32   runs=1   length=20s -----
+##### OneFileSTM-WF #####  
+Txn/sec = 879     delta = 0%   min = 879   max = 879
+Sorting delays...
+Txn delay (us): 50%=35397  70%=36081  80%=39317  90%=54684  99%=64801  99.9%=73896  99.99%=90736  99.999%=92386  max=92386
+
+
+----- Pair threads in opposite directions   threads=1   runs=1   length=20s -----
+##### TinySTM #####
+Txn/sec = 887     delta = 0%   min = 887   max = 887
+Sorting delays...
+Txn delay (us): 50%=1127  70%=1135  80%=1140  90%=1147  99%=1165  99.9%=1181  99.99%=1219  99.999%=1282  max=1282
+
+----- Pair threads in opposite directions   threads=4   runs=1   length=20s -----
+##### TinySTM #####
+Txn/sec = 4     delta = 0%   min = 4   max = 4
+Sorting delays...
+Txn delay (us): 50%=197395  70%=488809  80%=628028  90%=1682323  99%=5012220  99.9%=5653718  99.99%=5653718  99.999%=5653718  max=5653718
+
+----- Pair threads in opposite directions   threads=8   runs=1   length=20s -----
+##### TinySTM #####
+Txn/sec = 20     delta = 0%   min = 20   max = 20
+Sorting delays...
+Txn delay (us): 50%=128964  70%=281561  80%=456732  90%=725991  99%=3025805  99.9%=4362391  99.99%=4362391  99.999%=4362391  max=4362391
+
+----- Pair threads in opposite directions   threads=16   runs=1   length=20s -----
+##### TinySTM #####
+Txn/sec = 15     delta = 0%   min = 15   max = 15
+Sorting delays...
+Txn delay (us): 50%=376295  70%=699739  80%=975083  90%=1628749  99%=4789842  99.9%=7628150  99.99%=7628150  99.999%=7628150  max=7628150
+
+----- Pair threads in opposite directions   threads=24   runs=1   length=20s -----
+##### TinySTM #####
+Txn/sec = 31     delta = 0%   min = 31   max = 31
+Sorting delays...
+Txn delay (us): 50%=332132  70%=635088  80%=842335  90%=1255441  99%=2401368  99.9%=6538200  99.99%=6538200  99.999%=6538200  max=6538200
+
+----- Pair threads in opposite directions   threads=32   runs=1   length=20s -----
+##### TinySTM #####
+Txn/sec = 22     delta = 0%   min = 22   max = 22
+Sorting delays...
+Txn delay (us): 50%=544419  70%=952632  80%=1335927  90%=1873899  99%=5079261  99.9%=16872792  99.99%=16872792  99.999%=16872792  max=16872792
+
+Successfuly saved results in data/part-disjoint-ofwf.txt

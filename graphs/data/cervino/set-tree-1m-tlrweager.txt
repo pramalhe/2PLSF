@@ -1,0 +1,6 @@
+Threads	tlrw_eager-RedBlackTree-100%	tlrw_eager-RedBlackTree-10%	tlrw_eager-RedBlackTree-0%	
+1	92815	384753	616313	
+4	43105	396194	1689044	
+8	31524	244936	2253872	
+12	26693	250570	2402706	
+

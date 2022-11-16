@@ -1,0 +1,6 @@
+Threads	ORec-LinkedListSet-100%	Orec-LinkedListSet-20%	Orec-LinkedListSet-0%
+1	130897	0	0
+4	110168	0	0
+8	118510	0	0
+12	121404	0	0
+16	125043	0	0

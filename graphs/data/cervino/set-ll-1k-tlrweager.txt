@@ -1,0 +1,6 @@
+Threads	TLRW-LinkedListSet-100%	TLRW-LinkedListSet-20%	TLRW-LinkedListSet-0%
+1	80688	0	0
+4	61912	0	0
+8	42336	0	0
+12	35605	0	0
+16	33114	0	0

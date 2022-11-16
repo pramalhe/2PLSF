@@ -1,0 +1,5 @@
+Threads	tlrw_eager-SkipList-100%	tlrw_eager-SkipList-20%	tlrw_eager-SkipList-0%	
+1	332199	0	302712	
+4	1059411	0	881053	
+8	1479120	0	1327635	
+12	1915642	0	1924658	
