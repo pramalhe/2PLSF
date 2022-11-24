@@ -6,6 +6,8 @@ Pedro Ramalhete, Andreia Correia, Pascal Felber, [2PLSF - Two-Phase Locking with
 
 The source code the 2PLSF is located in stms/2PLSF.hpp and no other file is required to use this concurrency control in your work.
 
+This source is available at https://github.com/pramalhe/2PLSF
+
 ## STMs
 This repository contains the following STM implementations in the stms/ folder:
 
